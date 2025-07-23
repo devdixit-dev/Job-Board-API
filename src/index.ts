@@ -1,1 +1,3 @@
-console.log("Welcome, Job Board API");
+import Server from "./server";
+
+Server();
