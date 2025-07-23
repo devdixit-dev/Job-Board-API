@@ -1,4 +1,4 @@
-import ConnectDatabase from "./config/Database";
+import ConnectDatabase from "./config/database.config";
 import Server from "./server";
 
 (async () => {
