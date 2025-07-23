@@ -2,7 +2,6 @@ import cluster from 'cluster';
 import os from 'os';
 import 'dotenv/config';
 import app from './app';
-import AuthRouter from './routes/auth.route';
 
 const Server = () => {
   if (cluster.isPrimary) {
@@ -20,8 +19,6 @@ const Server = () => {
   }
   else {
     const port = process.env.PORT || 8000
-
-    app.use('/auth', AuthRouter);
     
     app.listen(port, () => {
       console.log(`server is running on port ${port} with worker - ${process.pid}`);
