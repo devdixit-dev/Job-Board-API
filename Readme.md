@@ -10,3 +10,7 @@ To run :
 bun run dev
 ```
 
+Make folder :
+``` js
+mkdir temp
+```

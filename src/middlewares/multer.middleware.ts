@@ -2,7 +2,7 @@ import multer from 'multer';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const file_path = 'C:/Users/Dev Dixit/Desktop/Advance Prep/Job Board API/src/temp'
+    const file_path = `${process.env.TEMP_URL}`
     cb(null, file_path);
   },
   filename: (req, file, cb) => {
