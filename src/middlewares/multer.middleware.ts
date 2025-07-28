@@ -2,11 +2,12 @@ import multer from 'multer';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, '/temp');
+    const file_path = 'C:/Users/Dev Dixit/Desktop/Advance Prep/Job Board API/src/temp'
+    cb(null, file_path);
   },
   filename: (req, file, cb) => {
     const fileName = 'uploadedfile';
-    cb(null, file.originalname + '_' + fileName);
+    cb(null, fileName + '_' + file.originalname);
   }
 });
 
