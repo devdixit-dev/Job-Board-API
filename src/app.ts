@@ -1,5 +1,4 @@
 import express from 'express';
-import multer from 'multer';
 import upload from './middlewares/multer.middleware';
 import AuthRouter from './routes/auth.route';
 import uploadOnCloud from './utils/cloudinary.util';
@@ -14,7 +13,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.get('/', (req, res) => {
-  res.end(`Home or / Page`);
+  return res.json({
+    title: 'Your Next Chapter Starts Here',
+    desc: 'We are more than just a job board; we are a career connection platform. We bridge the gap between passionate professionals looking to make their mark and innovative companies searching for that perfect spark. Forget the endless scrolling and resume black holes. We believe finding the right fit is about connecting people, not just matching keywords.'
+  });
 });
 
 app.post('/pic', upload.single('avatar'), async (req, res, next) => {
@@ -24,7 +26,7 @@ app.post('/pic', upload.single('avatar'), async (req, res, next) => {
   });
 });
 
-app.use('/auth', AuthRouter);
+app.use('/api/v1/auth', AuthRouter);
 
 app.use((req, res, next) => {
   res.status(400).json({ message: '404 not found' });
