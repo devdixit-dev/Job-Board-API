@@ -1,5 +1,6 @@
 import express from 'express';
-
+import multer from 'multer';
+import upload from './middlewares/multer.middleware';
 import AuthRouter from './routes/auth.route';
 
 const app = express();
@@ -8,6 +9,11 @@ app.use(express.json());
 
 app.get('/', (req, res) => {
   res.end(`Home or / Page`);
+});
+
+app.post('/pic', upload.single('avatar'), (req, res, next) => {
+  console.log(`profile pic uploaded.`);
+  next();
 });
 
 app.use('/auth', AuthRouter);
