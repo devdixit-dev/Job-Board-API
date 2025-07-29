@@ -28,13 +28,14 @@ app.post('/pic', upload.single('avatar'), async (req, res, next) => {
 
 app.use('/api/v1/auth', AuthRouter);
 
-app.use((req, res, next) => {
-  res.status(400).json({ message: '404 not found' });
-});
+// app.use((req, res, next) => {
+//   res.status(400).json({ message: '404 not found' });
+//   next();
+// });
 
-app.use((err: any, req: any, res: any, next: any) => {
-  res.status(500).json({ message: 'Something went wrong' });
-  next();
-});
+// app.use((err: any, req: any, res: any, next: any) => {
+//   res.status(500).json({ message: 'Something went wrong' });
+//   next();
+// });
 
 export default app;
