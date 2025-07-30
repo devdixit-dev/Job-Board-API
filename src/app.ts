@@ -2,6 +2,7 @@ import express from 'express';
 import upload from './middlewares/multer.middleware';
 import AuthRouter from './routes/auth.route';
 import uploadOnCloud from './utils/cloudinary.util';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 
@@ -9,6 +10,7 @@ app.use((req, res, next) => {
   console.log(`${req.method} - ${req.url}`);
   next();
 });
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

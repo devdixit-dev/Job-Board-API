@@ -2,6 +2,8 @@ import { validationResult } from 'express-validator';
 import { v4 as uuidv4 } from 'uuid';
 import redis from '../services/redis.service';
 import transporter from '../services/mailer.service';
+import User from '../models/user.model';
+import bcrypt from 'bcryptjs';
 
 export const CheckRoute = async (req: any, res: any) => {
   res.send('Auth api is working...');
@@ -40,18 +42,75 @@ export const EmployerRegister = async (req: any, res: any) => {
     verification_otp: otp
   }
 
-  await redis.set(`session-id: ${sessionId}`, JSON.stringify(newUser), 'EX', 3600); // expire after 1 hour
+  await redis.set(`sessionId`, JSON.stringify(newUser), 'EX', 3600)
+  .then(() => { console.log(`User data stored`) })
+  .catch((e) => { console.log(`Error while storing user in redis - ${e}`) });
+  // expire after 1 hour
   // store data temp
 
-  await transporter.sendMail({
-    from: 'Job Board API',
-    to: companyEmail,
-    subject: 'Hello from Job Board API',
-    text: `Welcome to the Job Board API. You just created an account with ${companyEmail}.`,
-    html: `Your verification otp is <b>${otp}</b>`
+  return res
+  .cookie('sessionId', sessionId, {
+    maxAge: 60 * 60
+  }).status(200)
+  .json({
+    success: true,
+    message: 'Welcome mail send',
+    otp
   });
+
+  // await transporter.sendMail({
+  //   from: 'Job Board API',
+  //   to: companyEmail,
+  //   subject: 'Hello from Job Board API',
+  //   text: `Welcome to the Job Board API. You just created an account with ${companyEmail}.`,
+  //   html: `Your verification otp is <b>${otp}</b>`
+  // });
 }
 
 export const UserOTPVerification = async (req: any, res: any) => {
-  
+  const sessionFromCookie = req.cookies.sessionId;
+  const user = await redis.get(`sessionId`);
+
+  if(!sessionFromCookie && !user) {
+    return res.status(400).json({
+      message: 'You are not authenticated user or register again'
+    });
+  }
+
+  const { otp } = req.body;
+
+  if(!otp) {
+    return res.status(400).json({
+      message: 'Verification OTP is required'
+    });
+  }
+
+  const parsedData = JSON.parse(`${user}`);
+
+  const isUserAuth = parsedData.sessionId === sessionFromCookie
+  console.log(isUserAuth)
+  // true
+  const hashPassword = await bcrypt.hash(parsedData.password, 10);
+
+  if(isUserAuth) {
+    const newUser = await User.create({
+      fullName: parsedData.fullName,
+      companyName: parsedData.companyName,
+      companyEmail: parsedData.companyEmail,
+      companyContactNumber: parsedData.companyContactNumber,
+      userRole: parsedData.userRole,
+      password: hashPassword,
+      isUserVerified: true
+    });
+
+    return res.status(201).json({
+      message: 'User registered',
+      user: newUser
+    });
+  }
+  else{
+    return res.status(400).json({
+      message: 'You need to do register again'
+    });
+  }
 }
