@@ -4,15 +4,16 @@ import redis from '../services/redis.service';
 import transporter from '../services/mailer.service';
 import User from '../models/user.model';
 import bcrypt from 'bcryptjs';
+import { decodeJwt, encodeJwt } from '../utils/jsonwebtoken.util';
 
 export const CheckRoute = async (req: any, res: any) => {
   res.send('Auth api is working...');
 }
 
 export const UserRegister = async (req: any, res: any) => {
-  const { fullName, companyName, userEmail, userContactNumber, userRole, password } = req.body;
+  const { fullName, userEmail, userContactNumber, userRole, password } = req.body;
 
-  if (!fullName || !companyName || !userEmail || !userContactNumber || !password) {
+  if (!fullName || !userEmail || !userContactNumber || !password) {
     return res.json({
       message: 'All fields are required for registration'
     });
@@ -42,7 +43,6 @@ export const UserRegister = async (req: any, res: any) => {
   const newUser = {
     sessionId,
     fullName,
-    companyName,
     userEmail,
     userContactNumber,
     userRole,
@@ -50,7 +50,7 @@ export const UserRegister = async (req: any, res: any) => {
     verification_otp: otp
   }
 
-  await redis.set(`sessionId`, JSON.stringify(newUser), 'EX', 3600)
+  await redis.set(`sessionId`, JSON.stringify(newUser), 'EX', 1800)
     .then(() => { console.log(`User data stored`) })
     .catch((e) => { console.log(`Error while storing user in redis - ${e}`) });
   // expire after 1 hour
@@ -64,19 +64,23 @@ export const UserRegister = async (req: any, res: any) => {
     html: `Your verification otp is <b>${otp}</b>`
   });
 
+  const decodedToken = await encodeJwt(newUser.sessionId);
+
   return res
-    .cookie('sessionId', sessionId, {
-      maxAge: 60 * 60 * 1000
+    .cookie('sessionId', decodedToken, {
+      maxAge: 30 * 60 * 1000
     }).status(200)
     .json({
       success: true,
-      message: 'Welcome mail send',
-      otp
+      message: `Welcome ${newUser.fullName}. We just sent you 6 digit OTP for account verification.`,
     });
 }
 
 export const UserOTPVerification = async (req: any, res: any) => {
   const sessionFromCookie = req.cookies.sessionId;
+  const decodedToken = await decodeJwt(sessionFromCookie)
+  console.log(decodedToken)
+  
   const user = await redis.get(`sessionId`);
 
   if (!sessionFromCookie && !user) {
@@ -95,7 +99,7 @@ export const UserOTPVerification = async (req: any, res: any) => {
 
   const parsedData = JSON.parse(`${user}`);
 
-  const isUserAuth = parsedData.sessionId === sessionFromCookie
+  const isUserAuth = parsedData.sessionId === decodedToken
   console.log(isUserAuth)
 
   const checkOTP = otp === parsedData.verification_otp;
@@ -131,4 +135,8 @@ export const UserOTPVerification = async (req: any, res: any) => {
       message: 'You need to do register again'
     });
   }
+}
+
+export const UserLogin = async (req: any, res: any) => {
+
 }
