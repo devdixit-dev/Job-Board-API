@@ -9,10 +9,10 @@ export const CheckRoute = async (req: any, res: any) => {
   res.send('Auth api is working...');
 }
 
-export const EmployerRegister = async (req: any, res: any) => {
-  const { fullName, companyName, companyEmail, companyContactNumber, userRole, password } = req.body;
+export const UserRegister = async (req: any, res: any) => {
+  const { fullName, companyName, userEmail, userContactNumber, userRole, password } = req.body;
 
-  if (!fullName || !companyName || !companyEmail || !companyContactNumber || !password) {
+  if (!fullName || !companyName || !userEmail || !userContactNumber || !password) {
     return res.json({
       message: 'All fields are required for registration'
     });
@@ -24,9 +24,9 @@ export const EmployerRegister = async (req: any, res: any) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const isUserAlreadyExisted = await User.findOne({ companyEmail });
+  const isUserAlreadyExisted = await User.findOne({ userEmail });
 
-  if(isUserAlreadyExisted) {
+  if (isUserAlreadyExisted) {
     return res.status(400).json({
       message: 'User already existed. Do login'
     });
@@ -43,8 +43,8 @@ export const EmployerRegister = async (req: any, res: any) => {
     sessionId,
     fullName,
     companyName,
-    companyEmail,
-    companyContactNumber,
+    userEmail,
+    userContactNumber,
     userRole,
     password,
     verification_otp: otp
@@ -56,6 +56,14 @@ export const EmployerRegister = async (req: any, res: any) => {
   // expire after 1 hour
   // store data temp
 
+  await transporter.sendMail({
+    from: 'msi.devdixit@gmail.com',
+    to: userEmail,
+    subject: 'Hello from Job Board API',
+    text: `Welcome to the Job Board API. You just created an account with ${userEmail}.`,
+    html: `Your verification otp is <b>${otp}</b>`
+  });
+
   return res
     .cookie('sessionId', sessionId, {
       maxAge: 60 * 60 * 1000
@@ -65,14 +73,6 @@ export const EmployerRegister = async (req: any, res: any) => {
       message: 'Welcome mail send',
       otp
     });
-
-  // await transporter.sendMail({
-  //   from: 'Job Board API',
-  //   to: companyEmail,
-  //   subject: 'Hello from Job Board API',
-  //   text: `Welcome to the Job Board API. You just created an account with ${companyEmail}.`,
-  //   html: `Your verification otp is <b>${otp}</b>`
-  // });
 }
 
 export const UserOTPVerification = async (req: any, res: any) => {
@@ -112,8 +112,8 @@ export const UserOTPVerification = async (req: any, res: any) => {
     const newUser = await User.create({
       fullName: parsedData.fullName,
       companyName: parsedData.companyName,
-      companyEmail: parsedData.companyEmail,
-      companyContactNumber: parsedData.companyContactNumber,
+      companyEmail: parsedData.userEmail,
+      companyContactNumber: parsedData.userContactNumber,
       userRole: parsedData.userRole,
       password: hashPassword,
       isUserVerified: true

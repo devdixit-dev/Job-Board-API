@@ -21,12 +21,12 @@ app.get('/', (req, res) => {
   });
 });
 
-app.post('/pic', upload.single('avatar'), async (req, res, next) => {
-  const result = await uploadOnCloud(`${req.file?.path}`);
-  return res.json({
-    message: 'file uploaded'
-  });
-});
+// app.post('/pic', upload.single('avatar'), async (req, res, next) => {
+//   const result = await uploadOnCloud(`${req.file?.path}`);
+//   return res.json({
+//     message: 'file uploaded'
+//   });
+// });
 
 app.use('/api/v1/auth', AuthRouter);
 

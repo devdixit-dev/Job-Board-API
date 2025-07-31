@@ -7,10 +7,10 @@ const UserSchema = new mongoose.Schema({
   companyName: {
     type: String
   },
-  companyEmail: {
+  userEmail: {
     type: String
   },
-  companyContactNumber: {
+  userContactNumber: {
     type: Number
   },
   userRole: {

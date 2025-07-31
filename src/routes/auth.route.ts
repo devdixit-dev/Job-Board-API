@@ -1,12 +1,12 @@
 import express from 'express';
-import { CheckRoute, EmployerRegister, UserOTPVerification } from '../controllers/auth.controller';
-import { EmployerRegisterValidator } from '../validators/employerRegister.validator';
+import { CheckRoute, UserRegister, UserOTPVerification } from '../controllers/auth.controller';
+import { RegisterValidator } from '../validators/register.validator';
 
 const AuthRouter = express.Router();
 
 AuthRouter.get('/check', CheckRoute);
 
-AuthRouter.post('/register/employer', EmployerRegisterValidator, EmployerRegister);
+AuthRouter.post('/register', RegisterValidator, UserRegister);
 
 AuthRouter.post('/verification', UserOTPVerification);
 
