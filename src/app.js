@@ -1,7 +1,7 @@
 import express from 'express';
-import upload from './middlewares/multer.middleware';
-import AuthRouter from './routes/auth.route';
-import uploadOnCloud from './utils/cloudinary.util';
+import upload from './middlewares/multer.middleware.js';
+import AuthRouter from './routes/auth.route.js';
+import uploadOnCloud from './utils/cloudinary.util.js';
 import cookieParser from 'cookie-parser';
 
 const app = express();

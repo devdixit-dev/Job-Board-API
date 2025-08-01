@@ -1,7 +1,7 @@
 import cluster from 'cluster';
 import os from 'os';
 import 'dotenv/config';
-import app from './app';
+import app from './app.js';
 
 const Server = () => {
   if (cluster.isPrimary) {

@@ -1,7 +1,7 @@
 import express from 'express';
-import { CheckRoute, UserRegister, UserOTPVerification, UserLogin } from '../controllers/auth.controller';
-import { RegisterValidator } from '../validators/register.validator';
-import { LoginValidator } from '../validators/login.validator';
+import { CheckRoute, UserRegister, UserOTPVerification, UserLogin } from '../controllers/auth.controller.js';
+import { RegisterValidator } from '../validators/register.validator.js';
+import { LoginValidator } from '../validators/login.validator.js';
 
 const AuthRouter = express.Router();
 

@@ -1,16 +1,16 @@
 import { validationResult } from 'express-validator';
 import { v4 as uuidv4 } from 'uuid';
-import redis from '../services/redis.service';
-import transporter from '../services/mailer.service';
-import User from '../models/user.model';
+import redis from '../services/redis.service.js';
+import transporter from '../services/mailer.service.js';
+import User from '../models/user.model.js';
 import bcrypt from 'bcryptjs';
-import { decodeJwt, encodeJwt } from '../utils/jsonwebtoken.util';
+import { decodeJwt, encodeJwt } from '../utils/jsonwebtoken.util.js';
 
-export const CheckRoute = async (req: any, res: any) => {
+export const CheckRoute = async (req, res) => {
   res.send('Auth api is working...');
 }
 
-export const UserRegister = async (req: any, res: any) => {
+export const UserRegister = async (req, res) => {
   const { fullName, userEmail, userContactNumber, userRole, password } = req.body;
 
   if (!fullName || !userEmail || !userContactNumber || !password) {
@@ -33,7 +33,7 @@ export const UserRegister = async (req: any, res: any) => {
     });
   }
 
-  const generatedOTP = (): string => {
+  const generatedOTP = () => {
     return Math.floor(100000 + Math.random() * 900000).toString();
   };
   const otp = generatedOTP(); // genOTP
@@ -76,7 +76,7 @@ export const UserRegister = async (req: any, res: any) => {
     });
 }
 
-export const UserOTPVerification = async (req: any, res: any) => {
+export const UserOTPVerification = async (req, res) => {
   const sessionFromCookie = req.cookies.sessionId;
   const decodedToken = await decodeJwt(sessionFromCookie)
   console.log(decodedToken)
@@ -137,6 +137,6 @@ export const UserOTPVerification = async (req: any, res: any) => {
   }
 }
 
-export const UserLogin = async (req: any, res: any) => {
+export const UserLogin = async (req, res) => {
 
 }
