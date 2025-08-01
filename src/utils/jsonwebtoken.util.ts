@@ -11,5 +11,5 @@ export const decodeJwt = async (encodedJwt: any) => {
   const secret = process.env.JWT_SEC_KEY as string
   if(!encodedJwt) return null
   const decode = jwt.verify(encodedJwt, secret);
-  return decode;
+  const token = decode
 }

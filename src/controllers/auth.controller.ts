@@ -80,10 +80,10 @@ export const UserOTPVerification = async (req: any, res: any) => {
   const sessionFromCookie = req.cookies.sessionId;
   const decodedToken = await decodeJwt(sessionFromCookie)
   console.log(decodedToken)
-  
-  const user = await redis.get(`sessionId`);
 
-  if (!sessionFromCookie && !user) {
+  const user = await redis.get(sessionFromCookie);
+
+  if (!sessionFromCookie || !user) {
     return res.status(400).json({
       message: 'You are not authenticated user or register again'
     });
@@ -99,7 +99,7 @@ export const UserOTPVerification = async (req: any, res: any) => {
 
   const parsedData = JSON.parse(`${user}`);
 
-  const isUserAuth = parsedData.sessionId === decodedToken
+  const isUserAuth = parsedData.sessionId === decodedToken;
   console.log(isUserAuth)
 
   const checkOTP = otp === parsedData.verification_otp;
@@ -123,7 +123,7 @@ export const UserOTPVerification = async (req: any, res: any) => {
       isUserVerified: true
     });
 
-    await redis.expire('sessionId', 1);
+    await redis.expire(sessionFromCookie, 1);
 
     return res.status(201).json({
       message: 'User registered',
