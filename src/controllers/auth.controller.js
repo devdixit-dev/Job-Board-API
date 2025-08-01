@@ -1,4 +1,4 @@
-import { check, validationResult } from 'express-validator';
+import { validationResult } from 'express-validator';
 import { v4 as uuidv4 } from 'uuid';
 import redis from '../services/redis.service.js';
 import transporter from '../services/mailer.service.js';
@@ -77,12 +77,12 @@ export const UserRegister = async (req, res) => {
 }
 
 export const UserOTPVerification = async (req, res) => {
-  const sessionFromCookie = req.cookies.sessionId;
-  const decodedToken = await decodeJwt(sessionFromCookie)
+  const id = req.cookies.sessionId;
+  const decodedToken = await decodeJwt(id)
 
   const user = await redis.get(`sessionId`);
 
-  if (!sessionFromCookie || !user) {
+  if (!id || !user) {
     return res.status(400).json({
       message: 'You are not authenticated user or register again'
     });
@@ -98,7 +98,7 @@ export const UserOTPVerification = async (req, res) => {
 
   const parsedData = JSON.parse(`${user}`);
 
-  const isUserAuth = parsedData.sessionId === decodedToken.sessionId;
+  const isUserAuth = parsedData.sessionId === decodedToken.id;
 
   const checkOTP = otp === parsedData.verification_otp;
 
@@ -113,9 +113,8 @@ export const UserOTPVerification = async (req, res) => {
   if (isUserAuth) {
     const newUser = await User.create({
       fullName: parsedData.fullName,
-      companyName: parsedData.companyName,
-      companyEmail: parsedData.userEmail,
-      companyContactNumber: parsedData.userContactNumber,
+      userEmail: parsedData.userEmail,
+      userContactNumber: parsedData.userContactNumber,
       userRole: parsedData.userRole,
       password: hashPassword,
       isUserVerified: true
@@ -136,5 +135,60 @@ export const UserOTPVerification = async (req, res) => {
 }
 
 export const UserLogin = async (req, res) => {
+  const { userEmail, password } = req.body;
 
+  if (!userEmail || !password) {
+    return res.status(400).json({
+      message: 'All fields are required for login'
+    });
+  }
+
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  const isUserRegistered = await User.findOne({ userEmail: userEmail });
+
+  if(!isUserRegistered) {
+    return res.status(400).json({
+      message: 'Account not found. Do registration first',
+      redirectedTo: '/register'
+    });
+  }
+
+  if(!isUserRegistered.isUserVerified) {
+    return res.status(400).json({
+      message: 'You need to verify your account first before login. Check your email for verification code',
+      timeLimit: '30m'
+    });
+  }
+
+  const decodePassword = bcrypt.compare(password, isUserRegistered.password);
+
+  if(!decodePassword) {
+    return res.status(400).json({
+      message: 'Invalid email or password',
+      suggestion: 'reset-password'
+    });
+  }
+
+  const encodeToken = await encodeJwt(isUserRegistered._id);
+
+  await res.clearCookie('sessionId');
+
+  isUserRegistered.isUserLoggedIn = true
+  await isUserRegistered.save();
+
+  return res
+  .cookie('token', encodeToken, {
+    maxAge: 30 * 60 * 1000,
+    httpOnly: false,
+    secure: true
+  })
+  .status(200)
+  .json({
+    message: `Welcome back, ${isUserRegistered.fullName} 🎈`,
+  });
 }

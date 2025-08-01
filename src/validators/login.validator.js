@@ -5,7 +5,7 @@ export const LoginValidator = [
   .isEmail()
   .withMessage('Invalid email address'),
 
-  body('userPassword')
+  body('password')
   .isLength({ min: 6 })
   .withMessage('Password must be at least 6 characters long. Please recheck your password')
 ]

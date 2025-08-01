@@ -1,9 +1,9 @@
 import jwt from 'jsonwebtoken';
 
-export const encodeJwt = async (sessionId) => {
-  if(!sessionId) return null
+export const encodeJwt = async (id) => {
+  if(!id) return null
   const secret = process.env.JWT_SEC_KEY
-  const encoded = jwt.sign({ sessionId }, secret, { expiresIn: '30m' });
+  const encoded = jwt.sign({ id }, secret, { expiresIn: '30m' });
   return encoded;
 }
 

@@ -20,8 +20,12 @@ const UserSchema = new mongoose.Schema({
   isUserVerified: {
     type: Boolean,
     default: false
+  },
+  isUserLoggedIn: {
+    type: Boolean,
+    default: false
   }
-});
+}, {timestamps: true});
 
 const User = mongoose.model('User', UserSchema);
 
