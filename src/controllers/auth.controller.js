@@ -1,4 +1,4 @@
-import { validationResult } from 'express-validator';
+import { check, validationResult } from 'express-validator';
 import { v4 as uuidv4 } from 'uuid';
 import redis from '../services/redis.service.js';
 import transporter from '../services/mailer.service.js';
@@ -79,9 +79,8 @@ export const UserRegister = async (req, res) => {
 export const UserOTPVerification = async (req, res) => {
   const sessionFromCookie = req.cookies.sessionId;
   const decodedToken = await decodeJwt(sessionFromCookie)
-  console.log(decodedToken)
 
-  const user = await redis.get(sessionFromCookie);
+  const user = await redis.get(`sessionId`);
 
   if (!sessionFromCookie || !user) {
     return res.status(400).json({
@@ -99,8 +98,7 @@ export const UserOTPVerification = async (req, res) => {
 
   const parsedData = JSON.parse(`${user}`);
 
-  const isUserAuth = parsedData.sessionId === decodedToken;
-  console.log(isUserAuth)
+  const isUserAuth = parsedData.sessionId === decodedToken.sessionId;
 
   const checkOTP = otp === parsedData.verification_otp;
 
@@ -123,7 +121,7 @@ export const UserOTPVerification = async (req, res) => {
       isUserVerified: true
     });
 
-    await redis.expire(sessionFromCookie, 1);
+    await redis.expire(`sessionId`, 1);
 
     return res.status(201).json({
       message: 'User registered',

@@ -10,6 +10,6 @@ export const encodeJwt = async (sessionId) => {
 export const decodeJwt = async (encodedJwt) => {
   const secret = process.env.JWT_SEC_KEY
   if(!encodedJwt) return null
-  const decode = jwt.verify(encodedJwt, secret);
-  const token = decode
+  const decoded = jwt.verify(encodedJwt, secret);
+  return decoded;
 }
