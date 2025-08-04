@@ -192,3 +192,30 @@ export const UserLogin = async (req, res) => {
     message: `Welcome back, ${isUserRegistered.fullName} 🎈`,
   });
 }
+
+export const UserLogout = async (req, res) => {
+  const user = req.user;
+
+  if(!user) {
+    return res.status(400).json({
+      message: 'User not found'
+    });
+  }
+
+  user.isUserLoggedIn = false
+  await user.save();
+
+  res.clearCookie('token', {
+    maxAge: 0,
+    httpOnly: false,
+    secure: true
+  });
+
+  return res.status(200).json({
+    message: `${user.fullName} logged out`
+  });
+}
+
+export const DeleteUserAccount = async (req, res) => {
+  
+}
