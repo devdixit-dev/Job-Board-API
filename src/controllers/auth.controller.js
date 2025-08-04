@@ -151,14 +151,14 @@ export const UserLogin = async (req, res) => {
 
   const isUserRegistered = await User.findOne({ userEmail: userEmail });
 
-  if(!isUserRegistered) {
+  if (!isUserRegistered) {
     return res.status(400).json({
       message: 'Account not found. Do registration first',
       redirectedTo: '/register'
     });
   }
 
-  if(!isUserRegistered.isUserVerified) {
+  if (!isUserRegistered.isUserVerified) {
     return res.status(400).json({
       message: 'You need to verify your account first before login. Check your email for verification code',
       timeLimit: '30m'
@@ -167,7 +167,7 @@ export const UserLogin = async (req, res) => {
 
   const decodePassword = bcrypt.compare(password, isUserRegistered.password);
 
-  if(!decodePassword) {
+  if (!decodePassword) {
     return res.status(400).json({
       message: 'Invalid email or password',
       suggestion: 'reset-password'
@@ -182,21 +182,21 @@ export const UserLogin = async (req, res) => {
   await isUserRegistered.save();
 
   return res
-  .cookie('token', encodeToken, {
-    maxAge: 30 * 60 * 1000,
-    httpOnly: false,
-    secure: true
-  })
-  .status(200)
-  .json({
-    message: `Welcome back, ${isUserRegistered.fullName} 🎈`,
-  });
+    .cookie('token', encodeToken, {
+      maxAge: 30 * 60 * 1000,
+      httpOnly: false,
+      secure: true
+    })
+    .status(200)
+    .json({
+      message: `Welcome back, ${isUserRegistered.fullName} 🎈`,
+    });
 }
 
 export const UserLogout = async (req, res) => {
   const user = req.user;
 
-  if(!user) {
+  if (!user) {
     return res.status(400).json({
       message: 'User not found'
     });
@@ -216,6 +216,56 @@ export const UserLogout = async (req, res) => {
   });
 }
 
-export const DeleteUserAccount = async (req, res) => {
-  
+export const UserVerifyEmail = async (req, res) => {
+  const { userEmail } = req.body;
+
+  if (!userEmail) {
+    return res.status(400).json({
+      message: 'Email field is required for verification'
+    });
+  }
+
+  const user = await User.findOne({ userEmail });
+
+  if (!user) {
+    return res.status(400).json({
+      message: 'User not found'
+    });
+  }
+
+  const generatedOTP = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+  const otp = generatedOTP();
+
+  await transporter.sendMail({
+    from: 'msi.devdixit@gmail.com',
+    to: userEmail,
+    subject: 'Verification - Forgot Password',
+    text: `OTP for forgetting password`,
+    html: `Your verification otp is <b>${otp}</b>`
+  })
+
+  const data = {
+    id: user._id,
+    verification_otp: otp
+  }
+
+  await redis.set('user_data', JSON.stringify(data), 'EX', 900);
+
+  const encodedToken = await encodeJwt(data.id);
+
+  return res
+    .cookie('token', encodedToken, {
+      maxAge: 15 * 60 * 1000
+    })
+    .status(200)
+    .json({
+      message: `Your email is verified. we just sent the otp on your email for verification.`
+    });
+}
+
+export const UserVerifyOtp = async (req, res) => {
+  const { otp } = req.body;
+
 }
