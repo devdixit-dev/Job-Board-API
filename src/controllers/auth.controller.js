@@ -246,26 +246,35 @@ export const UserVerifyEmail = async (req, res) => {
     html: `Your verification otp is <b>${otp}</b>`
   })
 
-  const data = {
-    id: user._id,
-    verification_otp: otp
-  }
+  await redis.set(`${user._id}`, JSON.stringify(otp), 'EX', 900);
 
-  await redis.set('user_data', JSON.stringify(data), 'EX', 900);
+  const encodeToken = await encodeJwt(user._id);
 
-  const encodedToken = await encodeJwt(data.id);
-
-  return res
-    .cookie('token', encodedToken, {
-      maxAge: 15 * 60 * 1000
-    })
-    .status(200)
-    .json({
+  res.cookie('token', encodeToken, {
+    maxAge: 15 * 60 * 1000
+  });
+  
+  return res.status(200).json({
       message: `Your email is verified. we just sent the otp on your email for verification.`
     });
 }
 
 export const UserVerifyOtp = async (req, res) => {
   const { otp } = req.body;
+  const user = req.user;
+
+  const parsedData = await redis.get(`${user._id}`);
+
+  const matchOtp = JSON.parse(parsedData) === otp
+
+  if(!matchOtp) {
+    return res.status(400).json({
+      message: 'Incorrect OTP'
+    });
+  }
+
+  
 
 }
+
+// parse the user_data for user id confirmation and verification otp

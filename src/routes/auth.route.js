@@ -1,5 +1,5 @@
 import express from 'express';
-import { CheckRoute, UserRegister, UserOTPVerification, UserLogin, UserLogout, UserVerifyEmail } from '../controllers/auth.controller.js';
+import { CheckRoute, UserRegister, UserOTPVerification, UserLogin, UserLogout, UserVerifyEmail, UserVerifyOtp } from '../controllers/auth.controller.js';
 import { RegisterValidator } from '../validators/register.validator.js';
 import { LoginValidator } from '../validators/login.validator.js';
 import AuthMiddleware from '../middlewares/auth.middleware.js';
@@ -15,6 +15,8 @@ AuthRouter.post('/verification', UserOTPVerification);
 AuthRouter.post('/login', LoginValidator, UserLogin);
 
 AuthRouter.post('/verify-email', UserVerifyEmail);
+
+AuthRouter.post('/verify-otp', AuthMiddleware, UserVerifyOtp);
 
 AuthRouter.post('/logout', AuthMiddleware, UserLogout);
 
