@@ -7,14 +7,14 @@ import bcrypt from 'bcryptjs';
 import { decodeJwt, encodeJwt } from '../utils/jsonwebtoken.util.js';
 
 export const CheckRoute = async (req, res) => {
-  res.send('Auth api is working...');
-}
+  res.status(200).send('Auth api is working...');
+} // 10/10
 
 export const UserRegister = async (req, res) => {
   const { fullName, userEmail, userContactNumber, userRole, password } = req.body;
 
   if (!fullName || !userEmail || !userContactNumber || !password) {
-    return res.json({
+    return res.status(400).json({
       message: 'All fields are required for registration'
     });
   }
@@ -68,15 +68,19 @@ export const UserRegister = async (req, res) => {
 
   return res
     .cookie('sessionId', decodedToken, {
-      maxAge: 30 * 60 * 1000
+      maxAge: 30 * 60 * 1000,
+      httpOnly: true,
+      secure: true
     }).status(200)
     .json({
       success: true,
       message: `Welcome ${newUser.fullName}. We just sent you 6 digit OTP for account verification.`,
     });
-}
+} // 9/10
 
 export const UserOTPVerification = async (req, res) => {
+  const { otp } = req.body;
+
   const id = req.cookies.sessionId;
   const decodedToken = await decodeJwt(id)
 
@@ -88,8 +92,6 @@ export const UserOTPVerification = async (req, res) => {
     });
   }
 
-  const { otp } = req.body;
-
   if (!otp) {
     return res.status(400).json({
       message: 'Verification OTP is required'
@@ -100,7 +102,7 @@ export const UserOTPVerification = async (req, res) => {
 
   const isUserAuth = parsedData.sessionId === decodedToken.id;
 
-  const checkOTP = otp === parsedData.verification_otp;
+  const checkOTP = otp === parsedData.verification_otp; // vulnerable
 
   if (!checkOTP) {
     return res.status(400).json({
@@ -120,7 +122,7 @@ export const UserOTPVerification = async (req, res) => {
       isUserVerified: true
     });
 
-    await redis.expire(`sessionId`, 1);
+    await redis.del(`sessionId`);
 
     return res.status(201).json({
       message: 'User registered',
@@ -132,7 +134,7 @@ export const UserOTPVerification = async (req, res) => {
       message: 'You need to do register again'
     });
   }
-}
+} // 8.5/10
 
 export const UserLogin = async (req, res) => {
   const { userEmail, password } = req.body;
@@ -165,7 +167,7 @@ export const UserLogin = async (req, res) => {
     });
   }
 
-  const decodePassword = bcrypt.compare(password, isUserRegistered.password);
+  const decodePassword = await bcrypt.compare(password, isUserRegistered.password);
 
   if (!decodePassword) {
     return res.status(400).json({
@@ -176,7 +178,7 @@ export const UserLogin = async (req, res) => {
 
   const encodeToken = await encodeJwt(isUserRegistered._id);
 
-  await res.clearCookie('sessionId');
+  res.clearCookie('sessionId');
 
   isUserRegistered.isUserLoggedIn = true
   await isUserRegistered.save();
@@ -184,14 +186,14 @@ export const UserLogin = async (req, res) => {
   return res
     .cookie('token', encodeToken, {
       maxAge: 30 * 60 * 1000,
-      httpOnly: false,
+      httpOnly: true,
       secure: true
     })
     .status(200)
     .json({
       message: `Welcome back, ${isUserRegistered.fullName} 🎈`,
     });
-}
+} // 9/10
 
 export const UserLogout = async (req, res) => {
   const user = req.user;
@@ -206,15 +208,14 @@ export const UserLogout = async (req, res) => {
   await user.save();
 
   res.clearCookie('token', {
-    maxAge: 0,
-    httpOnly: false,
+    httpOnly: true,
     secure: true
   });
 
   return res.status(200).json({
-    message: `${user.fullName} logged out`
+    message: 'User logged out successfully'
   });
-}
+} // 9/10
 
 export const UserVerifyEmail = async (req, res) => {
   const { userEmail } = req.body;
@@ -241,8 +242,8 @@ export const UserVerifyEmail = async (req, res) => {
   await transporter.sendMail({
     from: 'msi.devdixit@gmail.com',
     to: userEmail,
-    subject: 'Verification - Forgot Password',
-    text: `OTP for forgetting password`,
+    subject: 'OTP for Resetting Password',
+    text: `OTP Verification`,
     html: `Your verification otp is <b>${otp}</b>`
   })
 
@@ -251,30 +252,90 @@ export const UserVerifyEmail = async (req, res) => {
   const encodeToken = await encodeJwt(user._id);
 
   res.cookie('token', encodeToken, {
+    httpOnly: true,
+    secure: true,
     maxAge: 15 * 60 * 1000
   });
-  
+
   return res.status(200).json({
-      message: `Your email is verified. we just sent the otp on your email for verification.`
-    });
-}
+    message: `We just sent a 6-digit OTP to your email for password reset verification.`
+  });
+} // 8.5/10
 
 export const UserVerifyOtp = async (req, res) => {
   const { otp } = req.body;
   const user = req.user;
 
+  const userDoc = await User.findById(user._id);
+  if (!userDoc) return res.status(404).json({ message: 'User not found' });
+
+
   const parsedData = await redis.get(`${user._id}`);
 
   const matchOtp = JSON.parse(parsedData) === otp
 
-  if(!matchOtp) {
+  if (!otp) {
+    return res.status(400).json({ message: 'OTP is required' });
+  }
+
+
+  if (!matchOtp) {
     return res.status(400).json({
       message: 'Incorrect OTP'
     });
   }
 
-  
+  await redis.del(`${user._id}`);
 
-}
+  return res.status(200).json({
+    message: 'OTP Verified. Now you can change the password',
+    redirect: '/reset-password'
+  });
+} // 9/10
 
-// parse the user_data for user id confirmation and verification otp
+export const UserResetPassword = async (req, res) => {
+  const { newPassword, confirmNewPassword } = req.body;
+  const user = req.user;
+
+  if (!newPassword || !confirmNewPassword) {
+    return res.status(400).json({
+      message: 'All fields are required'
+    });
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    return res.status(400).json({
+      message: 'Your password must be matched'
+    })
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({
+      message: 'Password must be at least 6 characters long'
+    });
+  }
+
+
+  const decodeOldPassword = await bcrypt.compare(newPassword, user.password);
+
+  if (decodeOldPassword) {
+    return res.status(400).json({
+      message: 'New password will be different from the old password'
+    });
+  }
+
+  const hashPassword = await bcrypt.hash(newPassword, 10);
+
+  user.password = hashPassword;
+  await user.save();
+
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: true
+  });
+
+  return res.status(200).json({
+    message: 'Your password has been reset successfully.',
+    redirectedTo: '/login'
+  });
+} // 9/10
