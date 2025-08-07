@@ -2,15 +2,22 @@
 
 To install dependencies :
 ```js
-bun install
+npm install
 ```
 
 To run :
 ```js
-bun run dev
+npm run dev
 ```
 
-Make folder :
-``` js
-mkdir temp
-```
+### API Routes
+- http://localhost:7000/api/v1/auth
+
+#### Auth routes
+- /register
+- /verification
+- /login
+- /verify-email
+- /verify-otp
+- /reset-password
+- /logout
