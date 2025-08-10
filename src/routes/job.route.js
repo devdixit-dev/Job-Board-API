@@ -1,12 +1,15 @@
 import express from 'express';
-import { checkRoute } from '../controllers/job.controller.js';
-import { CheckEmployee } from '../middlewares/checkRole.middleware.js';
+import { AllJobs, checkRoute, PostJob } from '../controllers/job.controller.js';
+import AuthMiddleware from '../middlewares/auth.middleware.js';
+import { CheckEmployer } from '../middlewares/checkRole.middleware.js'
 
 const JobRouter = express.Router();
 
 JobRouter.get('/', checkRoute);
 
-JobRouter.get('/all', CheckEmployee, checkRoute);
+JobRouter.post('/post-job', AuthMiddleware, CheckEmployer, PostJob);
+
+JobRouter.get('/all', AuthMiddleware, AllJobs);
 
 export default JobRouter;
 
