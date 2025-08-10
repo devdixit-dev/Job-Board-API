@@ -3,6 +3,7 @@ import upload from './middlewares/multer.middleware.js';
 import AuthRouter from './routes/auth.route.js';
 import uploadOnCloud from './utils/cloudinary.util.js';
 import cookieParser from 'cookie-parser';
+import JobRouter from './routes/job.route.js';
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.get('/', (req, res) => {
 // });
 
 app.use('/api/v1/auth', AuthRouter);
+app.use('/api/v2/job', JobRouter);
 
 // app.use((req, res, next) => {
 //   res.status(400).json({ message: '404 not found' });
