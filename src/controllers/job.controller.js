@@ -1,11 +1,12 @@
 import Job from '../models/job.model.js'
+import mongoose from 'mongoose';
 
 export const checkRoute = (req, res) => {
   res.send('route is working');
 }
 
 export const PostJob = async (req, res) => {
-  try{
+  try {
     const {
       jobTitle,
       jobLocation,
@@ -22,7 +23,7 @@ export const PostJob = async (req, res) => {
 
     const user = req.user;
 
-    if(!jobTitle || !jobLocation || !jobSkills || !jobKeyRes || !jobReqQual) {
+    if (!jobTitle || !jobLocation || !jobSkills || !jobKeyRes || !jobReqQual) {
       return res.status(400).json({
         message: 'this fields are required to post a job'
       });
@@ -51,7 +52,7 @@ export const PostJob = async (req, res) => {
       job: addJob
     });
   }
-  catch(err) {
+  catch (err) {
     console.log(err);
     return res.status(500).json({
       message: 'Internal server error'
@@ -60,7 +61,7 @@ export const PostJob = async (req, res) => {
 }
 
 export const AllJobs = async (req, res) => {
-  try{
+  try {
     const allJobs = await Job.find();
 
     res.json({
@@ -68,7 +69,88 @@ export const AllJobs = async (req, res) => {
       jobs: allJobs
     });
   }
-  catch(err) {
+  catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: 'Internal server error'
+    });
+  }
+}
+
+export const UpdateJob = async (req, res) => {
+  try {
+    const user = req.user;
+    const id = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid job ID' });
+    }
+
+    const {
+      jobTitle,
+      jobLocation,
+      jobSalaryRange,
+      jobSkills,
+      jobCategory,
+      jobShift,
+      jobKeyRes,
+      jobReqQual,
+      jobFullAddress,
+      jobIntType,
+      jobType
+    } = req.body;
+
+    if (!id) {
+      return res.status(400).json({
+        message: 'No job found'
+      });
+    }
+
+    const job = await Job.findOne({ _id: id });
+
+    if (!job) {
+      return res.status(400).json({
+        message: 'Job not found'
+      });
+    }
+
+    const isEmployerSame = job.jobPostedBy.toString() === user._id.toString();
+
+    if(!isEmployerSame) {
+      return res.status(400).json({
+        message: 'Unauthorized access denied'
+      });
+    }
+
+    const updatedJob = await Job.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          jobTitle,
+          jobLocation,
+          jobSalaryRange,
+          jobCategory,
+          jobShift,
+          jobFullAddress,
+          jobIntType,
+          jobType,
+          jobSkills,
+          jobKeyRes,
+          jobReqQual
+        },
+      },
+      { new: true }
+    );
+
+    if (!updatedJob) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
+    return res.status(200).json({
+      message: 'Job details updated 🎉'
+    });
+  }
+  catch (err) {
     console.log(err);
     return res.status(500).json({
       message: 'Internal server error'
