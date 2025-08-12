@@ -30,26 +30,15 @@ export const PostJob = async (req, res) => {
     }
 
     const addJob = await Job.create({
-      jobTitle,
-      jobLocation,
-      jobSalaryRange,
-      jobSkills,
-      jobCategory,
-      jobShift,
-      jobKeyRes,
-      jobReqQual,
-      jobFullAddress,
-      jobIntType,
-      jobType,
+      ...req.body,
       jobPostedBy: user._id
     });
 
-    await user.postedJobs.push(addJob._id);
+    user.postedJobs.push(addJob._id);
     await user.save();
 
     return res.status(201).json({
-      message: 'New job posted',
-      job: addJob
+      message: 'New job posted'
     });
   }
   catch (err) {
@@ -58,7 +47,7 @@ export const PostJob = async (req, res) => {
       message: 'Internal server error'
     });
   }
-}
+} // 8/10
 
 export const AllJobs = async (req, res) => {
   try {
@@ -72,10 +61,11 @@ export const AllJobs = async (req, res) => {
   catch (err) {
     console.log(err);
     return res.status(500).json({
+      success: true,
       message: 'Internal server error'
     });
   }
-}
+} // 7.5/10
 
 export const UpdateJob = async (req, res) => {
   try {
@@ -100,12 +90,6 @@ export const UpdateJob = async (req, res) => {
       jobType
     } = req.body;
 
-    if (!id) {
-      return res.status(400).json({
-        message: 'No job found'
-      });
-    }
-
     const job = await Job.findOne({ _id: id });
 
     if (!job) {
@@ -116,8 +100,8 @@ export const UpdateJob = async (req, res) => {
 
     const isEmployerSame = job.jobPostedBy.toString() === user._id.toString();
 
-    if(!isEmployerSame) {
-      return res.status(400).json({
+    if (!isEmployerSame) {
+      return res.status(403).json({
         message: 'Unauthorized access denied'
       });
     }
@@ -147,6 +131,7 @@ export const UpdateJob = async (req, res) => {
     }
 
     return res.status(200).json({
+      success: true,
       message: 'Job details updated 🎉'
     });
   }
@@ -156,4 +141,44 @@ export const UpdateJob = async (req, res) => {
       message: 'Internal server error'
     });
   }
-}
+} // 8/10
+
+export const RemoveJob = async (req, res) => {
+  try {
+    const user = req.user;
+    const id = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid job ID' });
+    }
+
+    const job = await Job.findOne({ _id: id });
+
+    if (!job) {
+      return res.status(400).json({
+        message: 'Job not found'
+      });
+    }
+
+    const isEmployerSame = job.jobPostedBy.toString() === user._id.toString();
+
+    if (!isEmployerSame) {
+      return res.status(403).json({
+        message: 'Unauthorized access denied'
+      });
+    }
+
+    await Job.findByIdAndDelete(id);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Job post deleted'
+    });
+  }
+  catch (err) {
+    console.log(err);
+    return res.status(500).json({
+      message: 'Internal server error'
+    });
+  }
+} // 7.5/10

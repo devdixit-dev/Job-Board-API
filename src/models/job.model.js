@@ -47,7 +47,7 @@ const JobSchema = new mongoose.Schema({
     type: String,
     enum: ['in-office', 'hybrid', 'remote']
   }
-});
+}, {timestamps: true, strict: true});
 
 const Job = mongoose.model('Job', JobSchema);
 
